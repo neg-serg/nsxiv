@@ -13,7 +13,7 @@ static const char *DEFAULT_MARK_COLOR = "#1A5564";  /* NULL means it will defaul
 #if HAVE_LIBFONTS
 static const char *DEFAULT_BAR_BG     = "#080808";  /* NULL means it will default to window background */
 static const char *DEFAULT_BAR_FG     = "#3993AA";  /* NULL means it will default to window foreground */
-static const char *DEFAULT_FONT       = "Iosevka Term Medium:size=14";
+static const char *DEFAULT_FONT       = "Iosevka";
 
 /* if true, statusbar appears on top of the window */
 static const bool TOP_STATUSBAR = false;
