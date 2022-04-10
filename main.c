@@ -664,20 +664,14 @@ static void on_keypress(XKeyEvent *kev)
 	}
 	if (IsModifierKey(ksym))
 		return;
-	if (extprefix && ksym == KEYHANDLER_ABORT && MODMASK(kev->state) == 0) {
+	if (MODMASK(kev->state) == 0) {
 		handle_key_handler(false);
-	} else if (extprefix) {
-		if ((dirty = run_key_handler(XKeysymToString(ksym), kev->state & ~sh)))
-			extprefix = false;
-		else
-			handle_key_handler(false);
-	} else if (key >= '0' && key <= '9') {
-		/* number prefix for commands */
-		prefix = prefix * 10 + (int) (key - '0');
-		return;
-	} else {
-		dirty = process_bindings(keys, ARRLEN(keys), ksym, kev->state, sh);
 	}
+    if ((dirty = run_key_handler(XKeysymToString(ksym), kev->state & ~sh)))
+        extprefix = false;
+    else
+        handle_key_handler(false);
+    dirty = process_bindings(keys, ARRLEN(keys), ksym, kev->state, sh);
 	if (dirty)
 		redraw();
 	prefix = 0;
