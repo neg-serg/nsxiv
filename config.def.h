@@ -7,13 +7,13 @@ static const int WIN_HEIGHT = 600;
 /* colors and font can be overwritten via X resource properties.
  * See nsxiv(1), X(7) section Resources and xrdb(1) for more information.
  */
-static const char *DEFAULT_WIN_BG     = "white";
-static const char *DEFAULT_WIN_FG     = "black";
-static const char *DEFAULT_MARK_COLOR = NULL;  /* NULL means it will default to window foreground */
+static const char *DEFAULT_WIN_BG     = "#000000";
+static const char *DEFAULT_WIN_FG     = "#000000";
+static const char *DEFAULT_MARK_COLOR = "#1A5564";  /* NULL means it will default to window foreground */
 #if HAVE_LIBFONTS
-static const char *DEFAULT_BAR_BG     = NULL;  /* NULL means it will default to window background */
-static const char *DEFAULT_BAR_FG     = NULL;  /* NULL means it will default to window foreground */
-static const char *DEFAULT_FONT       = "monospace-8";
+static const char *DEFAULT_BAR_BG     = "#080808";  /* NULL means it will default to window background */
+static const char *DEFAULT_BAR_FG     = "#3993AA";  /* NULL means it will default to window foreground */
+static const char *DEFAULT_FONT       = "Iosevka Term Medium:size=14";
 
 /* if true, statusbar appears on top of the window */
 static const bool TOP_STATUSBAR = false;
@@ -26,8 +26,8 @@ static const bool TOP_STATUSBAR = false;
  * (first/last value is used as min/max zoom level)
  */
 static const float zoom_levels[] = {
-	 12.5,  25.0,  50.0,  75.0,
-	100.0, 150.0, 200.0, 400.0, 800.0
+    12.5,  25.0,  50.0,  75.0,
+    100.0, 150.0, 200.0, 400.0, 800.0
 };
 
 /* default slideshow delay (in sec, overwritten via -S option): */
@@ -50,7 +50,7 @@ static const bool ANTI_ALIAS = true;
 /* if true, use a checkerboard background for alpha layer,
  * toggled with 'A' key binding
  */
-static const bool ALPHA_LAYER = false;
+static const bool ALPHA_LAYER = true;
 
 /* percentage of memory to use for imlib2's cache size.
  *   3 means use 3% of total memory which is about 245MiB on 8GiB machine.
