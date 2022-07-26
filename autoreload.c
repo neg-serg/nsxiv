@@ -18,11 +18,13 @@
 
 #include "nsxiv.h"
 
+#if HAVE_INOTIFY
+
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
 #include <sys/inotify.h>
+#include <unistd.h>
 
 static union {
 	char d[4096]; /* aligned buffer */
@@ -77,7 +79,7 @@ void arl_setup(arl_t *arl, const char *filepath)
 	if (base != NULL) {
 		arl->filename[++base - filepath] = '\0';
 		add_watch(arl->fd, &arl->wd_dir, arl->filename, IN_CREATE | IN_MOVED_TO);
-		strcpy(arl->filename, base);
+		strcpy(arl->filename, base); /* NOLINT: basename will always be shorter than fullpath */
 	}
 }
 
@@ -109,3 +111,29 @@ bool arl_handle(arl_t *arl)
 	}
 	return reload;
 }
+
+#else
+
+void arl_init(arl_t *arl)
+{
+	arl->fd = -1;
+}
+
+void arl_cleanup(arl_t *arl)
+{
+	(void) arl;
+}
+
+void arl_setup(arl_t *arl, const char *filepath)
+{
+	(void) arl;
+	(void) filepath;
+}
+
+bool arl_handle(arl_t *arl)
+{
+	(void) arl;
+	return false;
+}
+
+#endif /* HAVE_INOTIFY */

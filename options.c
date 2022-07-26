@@ -20,6 +20,7 @@
 #include "nsxiv.h"
 #include "version.h"
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -164,7 +165,7 @@ void parse_options(int argc, char **argv)
 				_options.scalemode = s - scalemodes;
 				break;
 			case 'T':
-				title_deprecation_notice(); /* TODO(v30): remove this option */
+				title_deprecation_notice(); /* TODO(v31): remove this option */
 				break;
 			case 't':
 				_options.thumb_mode = true;

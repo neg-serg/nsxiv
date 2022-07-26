@@ -20,11 +20,9 @@
 #ifndef NSXIV_H
 #define NSXIV_H
 
-#include <stdarg.h>
 #include <stdbool.h>
-#include <stdio.h>
-#include <sys/time.h>
-#include <sys/types.h>
+#include <stddef.h>
+
 #include <Imlib2.h>
 #include <X11/Xlib.h>
 
@@ -39,21 +37,7 @@
 #define ABS(a) ((a) > 0 ? (a) : -(a))
 
 #define ARRLEN(a) (sizeof(a) / sizeof((a)[0]))
-
 #define STREQ(s1,s2) (strcmp((s1), (s2)) == 0)
-
-#define TV_DIFF(t1,t2) (((t1)->tv_sec  - (t2)->tv_sec ) * 1000 + \
-                        ((t1)->tv_usec - (t2)->tv_usec) / 1000)
-
-#define TV_SET_MSEC(tv,t) {             \
-  (tv)->tv_sec  = (t) / 1000;           \
-  (tv)->tv_usec = (t) % 1000 * 1000;    \
-}
-
-#define TV_ADD_MSEC(tv,t) {             \
-  (tv)->tv_sec  += (t) / 1000;          \
-  (tv)->tv_usec += (t) % 1000 * 1000;   \
-}
 
 typedef enum {
 	MODE_ALL,
@@ -178,9 +162,9 @@ typedef struct {
 
 typedef struct {
 	img_frame_t *frames;
-	int cap;
-	int cnt;
-	int sel;
+	unsigned int cap;
+	unsigned int cnt;
+	unsigned int sel;
 	bool animate;
 	unsigned int framedelay;
 	int length;
@@ -231,6 +215,10 @@ void img_toggle_antialias(img_t*);
 bool img_change_gamma(img_t*, int);
 bool img_frame_navigate(img_t*, int);
 bool img_frame_animate(img_t*);
+Imlib_Image img_open(const fileinfo_t*);
+#if HAVE_LIBEXIF
+void exif_auto_orientate(const fileinfo_t*);
+#endif
 
 
 /* options.c */
@@ -368,11 +356,6 @@ spawn_t spawn(const char*, char *const [], unsigned int);
 #endif
 
 enum {
-	BAR_L_LEN = 512,
-	BAR_R_LEN = 64
-};
-
-enum {
 	ATOM_WM_DELETE_WINDOW,
 	ATOM__NET_WM_NAME,
 	ATOM__NET_WM_ICON_NAME,
@@ -420,8 +403,8 @@ struct win {
 	unsigned int bw;
 
 	struct {
-		int w;
-		int h;
+		unsigned int w;
+		unsigned int h;
 		Pixmap pm;
 	} buf;
 
@@ -444,8 +427,37 @@ void win_toggle_bar(win_t*);
 void win_clear(win_t*);
 void win_draw(win_t*);
 void win_draw_rect(win_t*, int, int, int, int, bool, int, unsigned long);
-void win_set_title(win_t*, bool);
+void win_set_title(win_t*, const char*, size_t);
 void win_set_cursor(win_t*, cursor_t);
 void win_cursor_pos(win_t*, int*, int*);
+
+/* main.c */
+
+/* timeout handler functions: */
+void redraw(void);
+void reset_cursor(void);
+void animate(void);
+void slideshow(void);
+void clear_resize(void);
+
+void remove_file(int, bool);
+void set_timeout(timeout_f, int, bool);
+void reset_timeout(timeout_f);
+void close_info(void);
+void open_info(void);
+void load_image(int);
+bool mark_image(int, bool);
+int nav_button(void);
+void handle_key_handler(bool);
+
+extern appmode_t mode;
+extern const XButtonEvent *xbutton_ev;
+extern fileinfo_t *files;
+extern int filecnt, fileidx;
+extern int alternate;
+extern int markcnt;
+extern int markidx;
+extern int prefix;
+extern bool title_dirty;
 
 #endif /* NSXIV_H */

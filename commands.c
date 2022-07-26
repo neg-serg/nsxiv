@@ -19,46 +19,24 @@
 
 #include "nsxiv.h"
 
+#include "commands.h"
+
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
 #include <sys/wait.h>
+#include <unistd.h>
 
-void remove_file(int, bool);
-void load_image(int);
-bool mark_image(int, bool);
-void close_info(void);
-void open_info(void);
-int nav_button(void);
-void redraw(void);
-void reset_cursor(void);
-void animate(void);
-void slideshow(void);
-void set_timeout(timeout_f, int, bool);
-void reset_timeout(timeout_f);
-void handle_key_handler(bool);
-
-extern appmode_t mode;
 extern img_t img;
 extern tns_t tns;
 extern win_t win;
-extern const XButtonEvent *xbutton_ev;
-
-extern fileinfo_t *files;
-extern int filecnt, fileidx;
-extern int alternate;
-extern int markcnt;
-extern int markidx;
-
-extern int prefix;
-extern bool extprefix;
 
 bool cg_quit(arg_t status)
 {
 	unsigned int i;
 
 	if (options->to_stdout && markcnt > 0) {
-		for (i = 0; i < filecnt; i++) {
+		for (i = 0; i < (unsigned int)filecnt; i++) {
 			if (files[i].flags & FF_MARK)
 				printf("%s%c", files[i].name, options->using_null ? '\0' : '\n');
 		}
@@ -84,6 +62,9 @@ bool cg_switch_mode(arg_t _)
 		load_image(fileidx);
 		mode = MODE_IMAGE;
 	}
+	close_info();
+	open_info();
+	title_dirty = true;
 	return true;
 }
 
@@ -273,10 +254,7 @@ bool ci_navigate(arg_t n)
 	if (prefix > 0)
 		n *= prefix;
 	n += fileidx;
-	if (n < 0)
-		n = 0;
-	if (n >= filecnt)
-		n = filecnt - 1;
+	n = MAX(0, MIN(n, filecnt - 1));
 
 	if (n != fileidx) {
 		load_image(n);
@@ -341,7 +319,7 @@ bool ci_drag(arg_t drag_mode)
 	float px, py;
 	XEvent e;
 
-	if ((int)(img.w * img.zoom) <= win.w && (int)(img.h * img.zoom) <= win.h)
+	if ((int)(img.w * img.zoom) <= (int)win.w && (int)(img.h * img.zoom) <= (int)win.h)
 		return false;
 
 	win_set_cursor(&win, drag_mode == DRAG_ABSOLUTE ? CURSOR_DRAG_ABSOLUTE : CURSOR_DRAG_RELATIVE);
@@ -432,7 +410,12 @@ bool ci_slideshow(arg_t _)
 
 bool ct_move_sel(arg_t dir)
 {
-	return tns_move_selection(&tns, dir, prefix);
+	bool dirty = tns_move_selection(&tns, dir, prefix);
+	if (dirty) {
+		close_info();
+		open_info();
+	}
+	return dirty;
 }
 
 bool ct_reload_all(arg_t _)
