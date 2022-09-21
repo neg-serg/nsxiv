@@ -124,12 +124,12 @@ struct arl {
 	int fd;
 	int wd_dir;
 	int wd_file;
-	char *filename;
+	const char *filename;
 };
 
 void arl_init(arl_t*);
 void arl_cleanup(arl_t*);
-void arl_setup(arl_t*, const char* /* result of realpath(3) */);
+void arl_add(arl_t*, const char* /* result of realpath(3) */);
 bool arl_handle(arl_t*);
 
 
@@ -187,7 +187,7 @@ struct img {
 
 	bool checkpan;
 	bool dirty;
-	bool aa;
+	bool anti_alias;
 	bool alpha;
 
 	struct {
@@ -237,8 +237,9 @@ struct opt {
 	scalemode_t scalemode;
 	float zoom;
 	bool animate;
+	bool anti_alias;
 	int gamma;
-	int slideshow;
+	unsigned int slideshow;
 	int framerate;
 
 	/* window: */

@@ -28,7 +28,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-const char *progname;
+const char *progname = "nsxiv";
 
 void* emalloc(size_t size)
 {
@@ -60,14 +60,8 @@ void* erealloc(void *ptr, size_t size)
 
 char* estrdup(const char *s)
 {
-	char *d;
 	size_t n = strlen(s) + 1;
-
-	d = malloc(n);
-	if (d == NULL)
-		error(EXIT_FAILURE, errno, NULL);
-	memcpy(d, s, n);
-	return d;
+	return memcpy(emalloc(n), s, n);
 }
 
 void error(int eval, int err, const char* fmt, ...)

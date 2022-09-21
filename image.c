@@ -49,14 +49,14 @@ enum { DEF_WEBP_DELAY = 75 };
 
 static int calc_cache_size(void)
 {
-	int cache;
-	long pages, page_size;
+	long cache, pages = -1, page_size = -1;
 
 	if (CACHE_SIZE_MEM_PERCENTAGE <= 0)
 		return 0;
-
+#ifdef _SC_PHYS_PAGES /* _SC_PHYS_PAGES isn't POSIX */
 	pages = sysconf(_SC_PHYS_PAGES);
 	page_size = sysconf(_SC_PAGE_SIZE);
+#endif
 	if (pages < 0 || page_size < 0)
 		return CACHE_SIZE_FALLBACK;
 	cache = (pages/100) * CACHE_SIZE_MEM_PERCENTAGE;
@@ -80,7 +80,7 @@ void img_init(img_t *img, win_t *win)
 	img->zoom = MIN(img->zoom, ZOOM_MAX);
 	img->checkpan = false;
 	img->dirty = false;
-	img->aa = ANTI_ALIAS;
+	img->anti_alias = options->anti_alias;
 	img->alpha = ALPHA_LAYER;
 	img->multi.cap = img->multi.cnt = 0;
 	img->multi.animate = options->animate;
@@ -111,27 +111,27 @@ void exif_auto_orientate(const fileinfo_t *file)
 	exif_data_unref(ed);
 
 	switch (orientation) {
-		case 5:
-			imlib_image_orientate(1);
-			/* fall through */
-		case 2:
-			imlib_image_flip_vertical();
-			break;
-		case 3:
-			imlib_image_orientate(2);
-			break;
-		case 7:
-			imlib_image_orientate(1);
-			/* fall through */
-		case 4:
-			imlib_image_flip_horizontal();
-			break;
-		case 6:
-			imlib_image_orientate(1);
-			break;
-		case 8:
-			imlib_image_orientate(3);
-			break;
+	case 5:
+		imlib_image_orientate(1);
+		/* fall through */
+	case 2:
+		imlib_image_flip_vertical();
+		break;
+	case 3:
+		imlib_image_orientate(2);
+		break;
+	case 7:
+		imlib_image_orientate(1);
+		/* fall through */
+	case 4:
+		imlib_image_flip_horizontal();
+		break;
+	case 6:
+		imlib_image_orientate(1);
+		break;
+	case 8:
+		imlib_image_orientate(3);
+		break;
 	}
 }
 #endif
@@ -531,18 +531,18 @@ static bool img_fit(img_t *img)
 	zh = (float) img->win->h / (float) img->h;
 
 	switch (img->scalemode) {
-		case SCALE_FILL:
-			z = MAX(zw, zh);
-			break;
-		case SCALE_WIDTH:
-			z = zw;
-			break;
-		case SCALE_HEIGHT:
-			z = zh;
-			break;
-		default:
-			z = MIN(zw, zh);
-			break;
+	case SCALE_FILL:
+		z = MAX(zw, zh);
+		break;
+	case SCALE_WIDTH:
+		z = zw;
+		break;
+	case SCALE_HEIGHT:
+		z = zh;
+		break;
+	default:
+		z = MIN(zw, zh);
+		break;
 	}
 	z = MIN(z, img->scalemode == SCALE_DOWN ? 1.0 : ZOOM_MAX);
 
@@ -603,7 +603,7 @@ void img_render(img_t *img)
 	win_clear(win);
 
 	imlib_context_set_image(img->im);
-	imlib_context_set_anti_alias(img->aa);
+	imlib_context_set_anti_alias(img->anti_alias);
 	imlib_context_set_drawable(win->buf.pm);
 
 	/* manual blending, for performance reasons.
@@ -741,14 +741,14 @@ bool img_pan(img_t *img, direction_t dir, int d)
 	}
 
 	switch (dir) {
-		case DIR_LEFT:
-			return img_move(img, x, 0.0);
-		case DIR_RIGHT:
-			return img_move(img, -x, 0.0);
-		case DIR_UP:
-			return img_move(img, 0.0, y);
-		case DIR_DOWN:
-			return img_move(img, 0.0, -y);
+	case DIR_LEFT:
+		return img_move(img, x, 0.0);
+	case DIR_RIGHT:
+		return img_move(img, -x, 0.0);
+	case DIR_UP:
+		return img_move(img, 0.0, y);
+	case DIR_DOWN:
+		return img_move(img, 0.0, -y);
 	}
 	return false;
 }
@@ -844,9 +844,9 @@ void img_flip(img_t *img, flipdir_t d)
 
 void img_toggle_antialias(img_t *img)
 {
-	img->aa = !img->aa;
+	img->anti_alias = !img->anti_alias;
 	imlib_context_set_image(img->im);
-	imlib_context_set_anti_alias(img->aa);
+	imlib_context_set_anti_alias(img->anti_alias);
 	img->dirty = true;
 }
 

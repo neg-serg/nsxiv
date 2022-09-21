@@ -51,12 +51,6 @@
 }
 
 typedef struct {
-	struct timeval when;
-	bool active;
-	timeout_f handler;
-} timeout_t;
-
-typedef struct {
 	int err;
 	char *cmd;
 } extcmd_t;
@@ -98,12 +92,16 @@ static struct {
 
 bool title_dirty;
 
-static timeout_t timeouts[] = {
-	{ { 0, 0 }, false, redraw       },
-	{ { 0, 0 }, false, reset_cursor },
-	{ { 0, 0 }, false, slideshow    },
-	{ { 0, 0 }, false, animate      },
-	{ { 0, 0 }, false, clear_resize },
+static struct {
+	timeout_f handler;
+	struct timeval when;
+	bool active;
+} timeouts[] = {
+	{ redraw       },
+	{ reset_cursor },
+	{ slideshow    },
+	{ animate      },
+	{ clear_resize },
 };
 
 /**************************
@@ -160,7 +158,7 @@ void remove_file(int n, bool manual)
 
 	if (filecnt == 1) {
 		if (!manual)
-			fprintf(stderr, "nsxiv: no more files to display, aborting\n");
+			fprintf(stderr, "%s: no more files to display, aborting\n", progname);
 		exit(manual ? EXIT_SUCCESS : EXIT_FAILURE);
 	}
 	if (files[n].flags & FF_MARK)
@@ -350,7 +348,7 @@ void load_image(int new)
 
 	close_info();
 	open_info();
-	arl_setup(&arl, files[fileidx].path);
+	arl_add(&arl, files[fileidx].path);
 	title_dirty = true;
 
 	if (img.multi.cnt > 0 && img.multi.animate)
@@ -611,14 +609,12 @@ static bool run_key_handler(const char *key, unsigned int mask)
 	/* drop user input events that occurred while running the key handler */
 	while (XCheckIfEvent(win.env.dpy, &dump, is_input_ev, NULL));
 
-	if (mode == MODE_IMAGE) {
-		if (changed) {
-			img_close(&img, true);
-			load_image(fileidx);
-		}
-	}
-	if (mode == MODE_THUMB || !changed)
+	if (mode == MODE_IMAGE && changed) {
+		img_close(&img, true);
+		load_image(fileidx);
+	} else {
 		open_info();
+	}
 	free(oldst);
 	reset_cursor();
 	return true;
@@ -633,7 +629,7 @@ static bool process_bindings(const keymap_t *bindings, unsigned int len, KeySym 
 	for (i = 0; i < len; i++) {
 		if (bindings[i].ksym_or_button == ksym_or_button &&
 		    MODMASK(bindings[i].mask | implicit_mod) == MODMASK(state) &&
-		    bindings[i].cmd.func &&
+		    bindings[i].cmd.func != NULL &&
 		    (bindings[i].cmd.mode == MODE_ALL || bindings[i].cmd.mode == mode))
 		{
 			if (bindings[i].cmd.func(bindings[i].arg))
@@ -714,8 +710,10 @@ static void run(void)
 					remove_file(tns.loadnext, false);
 					tns.dirty = true;
 				}
-				if (tns.loadnext >= tns.end)
+				if (tns.loadnext >= tns.end) {
+					open_info();
 					redraw();
+				}
 			} else if (init_thumb) {
 				set_timeout(redraw, TO_REDRAW_THUMBS, false);
 				if (!tns_load(&tns, tns.initnext, false, true))
@@ -749,56 +747,55 @@ static void run(void)
 			if (XEventsQueued(win.env.dpy, QueuedAlready) > 0) {
 				XPeekEvent(win.env.dpy, &nextev);
 				switch (ev.type) {
-					case ConfigureNotify:
-					case MotionNotify:
-						discard = ev.type == nextev.type;
-						break;
-					case KeyPress:
-						discard = (nextev.type == KeyPress || nextev.type == KeyRelease)
-						          && ev.xkey.keycode == nextev.xkey.keycode;
-						break;
+				case ConfigureNotify:
+				case MotionNotify:
+					discard = ev.type == nextev.type;
+					break;
+				case KeyPress:
+					discard = (nextev.type == KeyPress || nextev.type == KeyRelease)
+					          && ev.xkey.keycode == nextev.xkey.keycode;
+					break;
 				}
 			}
 		} while (discard);
 
-		switch (ev.type) {
-			/* handle events */
-			case ButtonPress:
-				on_buttonpress(&ev.xbutton);
-				break;
-			case ClientMessage:
-				if ((Atom) ev.xclient.data.l[0] == atoms[ATOM_WM_DELETE_WINDOW])
-					cg_quit(EXIT_SUCCESS);
-				break;
-			case DestroyNotify:
-				cg_quit(EXIT_FAILURE);
-				break;
-			case ConfigureNotify:
-				if (win_configure(&win, &ev.xconfigure)) {
-					if (mode == MODE_IMAGE) {
-						img.dirty = true;
-						img.checkpan = true;
-					} else {
-						tns.dirty = true;
-					}
-					if (!resized) {
-						redraw();
-						set_timeout(clear_resize, TO_REDRAW_RESIZE, false);
-						resized = true;
-					} else {
-						set_timeout(redraw, TO_REDRAW_RESIZE, false);
-					}
-				}
-				break;
-			case KeyPress:
-				on_keypress(&ev.xkey);
-				break;
-			case MotionNotify:
+		switch (ev.type) { /* handle events */
+		case ButtonPress:
+			on_buttonpress(&ev.xbutton);
+			break;
+		case ClientMessage:
+			if ((Atom) ev.xclient.data.l[0] == atoms[ATOM_WM_DELETE_WINDOW])
+				cg_quit(EXIT_SUCCESS);
+			break;
+		case DestroyNotify:
+			cg_quit(EXIT_FAILURE);
+			break;
+		case ConfigureNotify:
+			if (win_configure(&win, &ev.xconfigure)) {
 				if (mode == MODE_IMAGE) {
-					set_timeout(reset_cursor, TO_CURSOR_HIDE, true);
-					reset_cursor();
+					img.dirty = true;
+					img.checkpan = true;
+				} else {
+					tns.dirty = true;
 				}
-				break;
+				if (!resized) {
+					redraw();
+					set_timeout(clear_resize, TO_REDRAW_RESIZE, false);
+					resized = true;
+				} else {
+					set_timeout(redraw, TO_REDRAW_RESIZE, false);
+				}
+			}
+			break;
+		case KeyPress:
+			on_keypress(&ev.xkey);
+			break;
+		case MotionNotify:
+			if (mode == MODE_IMAGE) {
+				set_timeout(reset_cursor, TO_CURSOR_HIDE, true);
+				reset_cursor();
+			}
+			break;
 		}
 	}
 }

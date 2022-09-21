@@ -15,10 +15,10 @@ under GPLv2 and aims to be easy to modify and customize.
 
 Please file a bug report if something does not work as documented or expected on
 [Codeberg] after making sure you are using the latest release.  Contributions
-are welcome, see [CONTRIBUTING.md] to get started.
+are welcome, see [CONTRIBUTING] to get started.
 
 [Codeberg]: https://codeberg.org/nsxiv/nsxiv/issues/new
-[CONTRIBUTING.md]: CONTRIBUTING.md#contribution-guideline
+[CONTRIBUTING]: etc/CONTRIBUTING.md#contribution-guideline
 
 
 Features
@@ -154,9 +154,13 @@ the following command:
 Usage
 -----
 
-Refer to the man page for the documentation:
+Refer to the man-page for the documentation:
 
     $ man nsxiv
+
+You may also view the man-page [online](https://nsxiv.codeberg.page/man/).
+However, note that the online man-page might not accurately represent your local
+copy.
 
 
 F.A.Q.
@@ -183,9 +187,9 @@ Customization
 The main method of customizing nsxiv is by setting values for the variables in *config.h*,
 or by using Xresources as explained in the manual. If these options are not sufficient,
 you may implement your own features by following
-[this guide](https://codeberg.org/nsxiv/nsxiv-extra/blob/master/CUSTOMIZATION.md).
+[this guide](https://codeberg.org/nsxiv/nsxiv-extra/src/branch/master/CUSTOMIZATION.md).
 
-Due to our limited [project scope](CONTRIBUTING.md#project-scope), certain features or
+Due to our limited [project scope](etc/CONTRIBUTING.md#project-scope), certain features or
 customization cannot be merged into nsxiv mainline. Following the spirit of suckless
 software, we host the [nsxiv-extra](https://codeberg.org/nsxiv/nsxiv-extra) repo where users
 are free to submit whatever patches or scripts they wish.
@@ -206,7 +210,7 @@ on CodeBerg or get a copy using git with the following command:
 
     $ git clone https://codeberg.org/nsxiv/nsxiv.git
 
-You can view the changelog [here](CHANGELOG.md)
+You can view the changelog [here](etc/CHANGELOG.md)
 
 
 Similar projects
@@ -218,9 +222,9 @@ viewers to try out.
 
 Below are a couple other lesser known projects not listed in suckless rocks.
 
-* [MAGE](https://github.com/explosion-mental/mage):
+* [MAGE](https://codeberg.org/explosion-mental/mage):
   A smaller/more-suckless version of sxiv.
-* [div](https://github.com/TAAPArthur/div):
+* [div](https://codeberg.org/TAAPArthur/div):
   Minimal and extensive, aimed at C devs willing to build their own features.
 * [mpv-image-viewer](https://github.com/occivink/mpv-image-viewer):
   Lua script to turn mpv into an image viewer. Supports thumbnails via
