@@ -665,8 +665,7 @@ static void on_keypress(XKeyEvent *kev)
     else
         handle_key_handler(false);
     dirty = process_bindings(keys, ARRLEN(keys), ksym, kev->state, sh);
-	if (dirty)
-		redraw();
+    redraw();
 	prefix = 0;
 }
 
@@ -681,8 +680,7 @@ static void on_buttonpress(const XButtonEvent *bev)
 	} else { /* thumbnail mode */
 		dirty = process_bindings(buttons_tns, ARRLEN(buttons_tns), bev->button, bev->state, 0);
 	}
-	if (dirty)
-		redraw();
+    redraw();
 	prefix = 0;
 }
 
