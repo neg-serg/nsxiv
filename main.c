@@ -123,7 +123,7 @@ static bool xgetline(char **lineptr, size_t *n)
 	return len > 0;
 }
 
-static void check_add_file(char *filename, bool given)
+static void check_add_file(const char *filename, bool given, const char *match)
 {
 	char *path;
 
@@ -145,7 +145,7 @@ static void check_add_file(char *filename, bool given)
 	}
 
 	files[fileidx].name = estrdup(filename);
-	files[fileidx].path = path;
+	files[fileidx].path = match != NULL && STREQ(path, match) ? (free(path), match) : path;
 	if (given)
 		files[fileidx].flags |= FF_WARN;
 	fileidx++;
@@ -823,7 +823,7 @@ int main(int argc, char *argv[])
 {
 	int i, start;
 	size_t n;
-	char *filename;
+	char *filename, *savedname = NULL;
 	const char *homedir, *dsuffix = "";
 	struct stat fstats;
 	r_dir_t dir;
@@ -858,10 +858,18 @@ int main(int argc, char *argv[])
 		n = 0;
 		filename = NULL;
 		while (xgetline(&filename, &n))
-			check_add_file(filename, true);
+			check_add_file(filename, true, NULL);
 		free(filename);
 	}
 
+	if (options->filecnt == 1 && options->filenames[0] != NULL &&
+	    stat(options->filenames[0], &fstats) == 0 && !S_ISDIR(fstats.st_mode))
+	{
+		char *tmp;
+		if ((savedname = realpath(options->filenames[0], NULL)) == NULL)
+			error(EXIT_FAILURE, errno, "Failed to get path");
+		options->filenames[0] = ((*strrchr((tmp = estrdup(savedname)), '/')) = '\0', tmp); /* don't ask why... */
+	}
 	for (i = 0; i < options->filecnt; i++) {
 		filename = options->filenames[i];
 
@@ -870,7 +878,7 @@ int main(int argc, char *argv[])
 			continue;
 		}
 		if (!S_ISDIR(fstats.st_mode)) {
-			check_add_file(filename, true);
+			check_add_file(filename, true, savedname);
 		} else {
 			if (r_opendir(&dir, filename, options->recursive) < 0) {
 				error(0, errno, "%s", filename);
@@ -878,7 +886,7 @@ int main(int argc, char *argv[])
 			}
 			start = fileidx;
 			while ((filename = r_readdir(&dir, true)) != NULL) {
-				check_add_file(filename, false);
+				check_add_file(filename, false, savedname);
 				free((void*) filename);
 			}
 			r_closedir(&dir);
@@ -892,6 +900,14 @@ int main(int argc, char *argv[])
 
 	filecnt = fileidx;
 	fileidx = options->startnum < filecnt ? options->startnum : 0;
+	for (i = 0; savedname != NULL && i < filecnt; ++i) {
+		if (files[i].path == savedname) { /* poor man's hash; compare ptrs instead of string */
+			fileidx = i;
+			savedname = NULL;
+			break;
+		}
+	}
+	free(savedname);
 
 	win_init(&win);
 	img_init(&img, &win);
