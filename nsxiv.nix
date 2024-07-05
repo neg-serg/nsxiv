@@ -18,8 +18,8 @@ stdenv.mkDerivation (finalAttrs: {
   src = fetchFromGitHub {
       owner = "neg-serg";
       repo = "nsxiv";
-      rev = "05ecc702cea360c2f8fc01ea8238c4bddafb3832";
-      hash = "sha256-MvLG4E6Uy7vg6bOD+3TMXa/dQ62L2w2ozycSVKLgoEU=";
+      rev = "26cdf4a541794465e6115001bbf593b415e2e0a6";
+      hash = "sha256-08IjW99gzmya2MpVtOY0BPVO9YIt9Hs+Jmfs+81/laA=";
   };
 
   buildInputs = [
